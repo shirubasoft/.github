@@ -1,6 +1,7 @@
 import importlib.util
 from pathlib import Path
 import unittest
+from unittest.mock import patch, MagicMock
 
 
 def module(name):
@@ -11,6 +12,15 @@ def module(name):
 
 
 class ComposeIdentityTests(unittest.TestCase):
+    def test_health_check_identifies_the_deployer_and_does_not_read_bodies(self):
+        deploy = module('deploy')
+        response = MagicMock()
+        response.__enter__.return_value.status = 200
+        with patch.object(deploy.urllib.request, 'urlopen', return_value=response) as request:
+            deploy.check_url('https://example.test/health')
+        self.assertEqual('shirubasoft-aspire-deploy/1.0', request.call_args.args[0].get_header('User-agent'))
+        response.__enter__.return_value.read.assert_not_called()
+
     def test_rewrites_only_the_explicit_project_argument(self):
         args = ['compose', '-f', '/tmp/out/docker-compose.yaml', '--project-name', 'aspire-homelab-aabbccdd',
                 '--env-file', '/tmp/out/.env.staging', 'up', '-d', '--remove-orphans']

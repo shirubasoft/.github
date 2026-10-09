@@ -50,7 +50,8 @@ def check_url(url):
     # Bound the rollout check to two minutes; never print response bodies.
     for attempt in range(24):
         try:
-            with urllib.request.urlopen(url, timeout=10) as response:
+            request = urllib.request.Request(url, headers={"User-Agent": "shirubasoft-aspire-deploy/1.0"})
+            with urllib.request.urlopen(request, timeout=10) as response:
                 if response.status == 200:
                     return
         except (urllib.error.URLError, TimeoutError):
@@ -166,7 +167,9 @@ def main():
                       "url": os.environ["DEPLOY_URL"], "parameters": json.loads(os.environ["ASPIRE_PARAMETERS"]),
                       "secrets": json.loads(os.environ["ASPIRE_SECRET_PARAMETERS"])}
         deploy(args.repo.resolve(), inputs, args.preflight_only)
-    except (RuntimeError, OSError, ValueError, KeyError, subprocess.SubprocessError):
+    except RuntimeError as error:
+        sys.exit(str(error))
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError):
         sys.exit("Deployment failed. Check input names, tool versions and redacted diagnostics; values withheld.")
 
 

@@ -15,3 +15,9 @@ jobs:
       - run: python3 -m unittest discover -s tests
       - name: Lint workflows
         run: scripts/lint-workflows.sh
+      - name: Verify Aspire acquisition and runner Docker tools
+        run: |
+          bash scripts/install-aspire.sh "$RUNNER_TEMP/aspire-cli"
+          docker version
+          docker compose version
+          docker buildx version

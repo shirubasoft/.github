@@ -63,11 +63,7 @@ jobs:
       - name: Install pinned Aspire CLI
         shell: bash
         run: |
-          archive="$RUNNER_TEMP/aspire-cli-linux-x64-13.6.1.tar.gz"
-          curl --fail --silent --show-error --location https://github.com/dotnet/aspire/releases/download/v13.6.1/aspire-cli-linux-x64-13.6.1.tar.gz --output "$archive"
-          printf '%s  %s\n' f5498a1b30f894186a805c08798d9ca4f112dfc3b5f24ab0acef3f8aa5d009b8 "$archive" | sha256sum --check --status
-          mkdir -p "$RUNNER_TEMP/aspire-cli"
-          tar -xzf "$archive" -C "$RUNNER_TEMP/aspire-cli"
+          bash .deploy-platform/scripts/install-aspire.sh "$RUNNER_TEMP/aspire-cli"
           echo "$RUNNER_TEMP/aspire-cli" >> "$GITHUB_PATH"
       - name: Join tailnet as ephemeral deploy node
         uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4
