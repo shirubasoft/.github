@@ -9,6 +9,6 @@ permissions:
 jobs:
   deploy:
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
-    uses: shirubasoft/.github/.github/workflows/aspire-deploy.yml@0f4284072f7a6a16bca8d1bc3720145de5a999a2
+    uses: shirubasoft/.github/.github/workflows/aspire-deploy.yml@main
     with:
       environment: staging

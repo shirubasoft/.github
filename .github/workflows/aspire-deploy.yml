@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   deploy:
-    if: github.repository_owner == 'shirubasoft' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    if: github.repository_owner == 'shirubasoft' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (inputs.environment == 'staging' || inputs.environment == 'production')
     runs-on: ubuntu-latest
     timeout-minutes: 30
     environment:
@@ -39,9 +39,10 @@ jobs:
               token = json.load(response)['value']
           payload = token.split('.')[1]
           claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
-          assert claims['job_workflow_ref'].startswith('shirubasoft/.github/.github/workflows/aspire-deploy.yml@')
+          assert claims['job_workflow_ref'] == 'shirubasoft/.github/.github/workflows/aspire-deploy.yml@refs/heads/main'
           sha = claims['job_workflow_sha']
           assert re.fullmatch('[0-9a-f]{40}', sha)
+          print('Deployment platform workflow revision: ' + sha)
           with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
               output.write('sha=' + sha + '\n')
           PY
