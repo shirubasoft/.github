@@ -51,7 +51,8 @@ property in this version's public API.
 `DEPLOY_PROJECT`, normally `<app>-<environment>`. It preserves the rest of
 Aspire's deploy pipeline, including builds and tunnel route ordering, and rejects
 missing, duplicate or foreign project arguments. Engine and build commands pass
-through unchanged. This belongs in deployment orchestration rather than an
+through unchanged. The adapter provides deterministic names only. Deploy access
+to this shared Docker daemon controls every stack, container, secret and volume. This belongs in deployment orchestration rather than an
 AppHost extension because the same script works across AppHost languages.
 
 The entrypoint also isolates Docker configuration and requires a pinned SSH host

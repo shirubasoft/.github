@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Adapt the pinned Aspire Docker invocation to a stable Compose project."""
+"""Give Aspire a deterministic Compose project name. This does not isolate apps."""
 import os
 import sys
 
