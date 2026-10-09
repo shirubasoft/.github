@@ -162,6 +162,10 @@ def main():
                 fail("Deployment input file must be a regular 0600 file")
             inputs = json.loads(path.read_text())
         else:
+            # GitHub passes an unset or unforwarded environment secret as an empty string.
+            empty = [name for name in ("ASPIRE_PARAMETERS", "ASPIRE_SECRET_PARAMETERS") if not os.environ.get(name)]
+            if empty:
+                fail("Empty deployment input: " + ", ".join(empty))
             inputs = {"environment": os.environ["DEPLOY_ENVIRONMENT"], "project": os.environ["DEPLOY_PROJECT"],
                       "docker_host": os.environ["DEPLOY_DOCKER_HOST"], "known_hosts": os.environ["DEPLOY_KNOWN_HOSTS"],
                       "url": os.environ["DEPLOY_URL"], "parameters": json.loads(os.environ["ASPIRE_PARAMETERS"]),

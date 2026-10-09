@@ -6,6 +6,9 @@ on:
       environment:
         type: string
         required: true
+    secrets:
+      ASPIRE_SECRET_PARAMETERS:
+        required: true
 
 permissions:
   contents: read

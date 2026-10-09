@@ -46,3 +46,14 @@ class ComposeIdentityTests(unittest.TestCase):
         for value in ({'auth-secret': ''}, {'bad_name': 'value'}, {'x': None}):
             with self.assertRaises(RuntimeError):
                 deploy.parameter_environment(value)
+
+    def test_empty_ci_secret_input_is_named(self):
+        deploy = module('deploy')
+        environment = {'DEPLOY_ENVIRONMENT': 'staging', 'DEPLOY_PROJECT': 'auth-staging',
+                       'DEPLOY_DOCKER_HOST': 'ssh://deploy@example.test', 'DEPLOY_KNOWN_HOSTS': 'host key',
+                       'DEPLOY_URL': 'https://example.test', 'ASPIRE_PARAMETERS': '{}', 'ASPIRE_SECRET_PARAMETERS': ''}
+        with patch.dict(deploy.os.environ, environment, clear=True), patch.object(deploy.sys, 'argv', ['deploy.py']), \
+             patch.object(deploy, 'deploy') as run_deploy, self.assertRaises(SystemExit) as exit:
+            deploy.main()
+        self.assertEqual('Empty deployment input: ASPIRE_SECRET_PARAMETERS', str(exit.exception))
+        run_deploy.assert_not_called()

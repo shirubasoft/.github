@@ -12,3 +12,5 @@ jobs:
     uses: shirubasoft/.github/.github/workflows/aspire-deploy.yml@main
     with:
       environment: staging
+    secrets:
+      ASPIRE_SECRET_PARAMETERS: ${{ secrets.ASPIRE_SECRET_PARAMETERS }}
