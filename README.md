@@ -4,8 +4,10 @@
 runners. Call it at the owner-controlled `main` ref with a `staging` or `production`
 `environment` input. Tailscale issuance requires this exact reusable workflow
 ref, the caller's `refs/heads/main`, and organization ID `184028621`. The deployment
-job uses that GitHub Environment's secrets and variables; callers do not pass
-secrets. Only `push` and `workflow_dispatch` on `main` can run it.
+job uses that GitHub Environment's variables. The caller passes
+`ASPIRE_SECRET_PARAMETERS` by name (`secrets: ASPIRE_SECRET_PARAMETERS: ${{ secrets.ASPIRE_SECRET_PARAMETERS }}`);
+GitHub resolves it from the Environment inside the deployment job and gives an
+unpassed secret an empty value. Only `push` and `workflow_dispatch` on `main` can run it.
 
 The application supplies `global.json`, `.node-version`, and `deploy.json`:
 
