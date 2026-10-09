@@ -1,0 +1,7 @@
+{
+  "name": "Aspire deployment",
+  "description": "Deploy an onboarded Aspire application through a main-only GitHub Environment.",
+  "iconName": "octicon rocket",
+  "categories": ["Deployment"],
+  "filePatterns": ["deploy.json$"]
+}

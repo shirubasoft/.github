@@ -1,0 +1,87 @@
+name: Deploy Aspire
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    if: github.repository_owner == 'shirubasoft' && github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && (inputs.environment == 'staging' || inputs.environment == 'production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: ${{ inputs.environment }}
+      url: ${{ vars.DEPLOY_URL }}
+    concurrency:
+      group: deploy-${{ github.repository }}-${{ inputs.environment }}
+      cancel-in-progress: false
+    steps:
+      - name: Check out application
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Resolve this reusable workflow's immutable revision
+        id: platform
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64, json, os, re, urllib.request
+          req = urllib.request.Request(os.environ['ACTIONS_ID_TOKEN_REQUEST_URL'], headers={
+              'Authorization': 'Bearer ' + os.environ['ACTIONS_ID_TOKEN_REQUEST_TOKEN']})
+          with urllib.request.urlopen(req, timeout=30) as response:
+              token = json.load(response)['value']
+          payload = token.split('.')[1]
+          claims = json.loads(base64.urlsafe_b64decode(payload + '=' * (-len(payload) % 4)))
+          assert claims['job_workflow_ref'] == 'shirubasoft/.github/.github/workflows/aspire-deploy.yml@refs/heads/main'
+          sha = claims['job_workflow_sha']
+          assert re.fullmatch('[0-9a-f]{40}', sha)
+          print('Deployment platform workflow revision: ' + sha)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('sha=' + sha + '\n')
+          PY
+      - name: Check out deployment entrypoint
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: shirubasoft/.github
+          ref: ${{ steps.platform.outputs.sha }}
+          path: .deploy-platform
+          persist-credentials: false
+      - name: Install pinned .NET SDK
+        uses: actions/setup-dotnet@67a3573c9a986a3f9c594539f4ab511d57bb3ce9 # v4
+        with:
+          global-json-file: global.json
+      - name: Install pinned Node
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version-file: .node-version
+      - name: Install pinned Aspire CLI
+        shell: bash
+        run: |
+          bash .deploy-platform/scripts/install-aspire.sh "$RUNNER_TEMP/aspire-cli"
+          echo "$RUNNER_TEMP/aspire-cli" >> "$GITHUB_PATH"
+      - name: Join tailnet as ephemeral deploy node
+        uses: tailscale/github-action@d1b6cd204f8dceda5b3eaad7f1f767be390056cd # v4
+        with:
+          oauth-client-id: ${{ vars.TS_DEPLOY_CLIENT_ID }}
+          audience: ${{ vars.TS_DEPLOY_AUDIENCE }}
+          tags: tag:deploy
+          version: 1.94.2
+          use-cache: 'false'
+          log-mode: quiet
+      - name: Deploy and verify
+        run: python3 .deploy-platform/scripts/deploy.py
+        env:
+          DEPLOY_ENVIRONMENT: ${{ inputs.environment }}
+          DEPLOY_PROJECT: ${{ vars.DEPLOY_PROJECT }}
+          DEPLOY_DOCKER_HOST: ${{ vars.DEPLOY_DOCKER_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ vars.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_URL: ${{ vars.DEPLOY_URL }}
+          ASPIRE_PARAMETERS: ${{ vars.ASPIRE_PARAMETERS }}
+          ASPIRE_SECRET_PARAMETERS: ${{ secrets.ASPIRE_SECRET_PARAMETERS }}
